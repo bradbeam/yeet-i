@@ -1,7 +1,8 @@
 package main
 
 import (
-	"embed"
+	"io"
+	"io/fs"
 	"log"
 	"os"
 
@@ -9,42 +10,61 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gomono"
+
+	"github.com/bradbeam/yeet-i/maps"
+	"github.com/bradbeam/yeet-i/scene"
 )
 
-type Scene interface {
-	Update()
-	Draw(screen *ebiten.Image)
-}
-
 type Game struct {
-	activeScene Scene
+	activeScene scene.Scene
 	font        font.Face
 
-	titleScene Scene
-	gameScene  Scene
+	titleScene scene.Scene
+	gameScene  scene.Scene
+
+	fs fs.FS
 }
 
-func NewGame(fs embed.FS) *Game {
+func NewGame(fs fs.FS) *Game {
 	fontData, err := truetype.Parse(gomono.TTF)
 	if err != nil {
 		panic(err)
 	}
 
-	titleBackground, err := fs.ReadFile("assets/pexels-ann-h-15009816-2.jpg")
+	titleFile, err := fs.Open("assets/pexels-ann-h-15009816-2.jpg")
 	if err != nil {
 		log.Fatalf("failed to find title background: %v", err)
 	}
-	titleScene := NewTitle(titleBackground)
+
+	defer titleFile.Close()
+
+	titleBackground, err := io.ReadAll(titleFile)
+	if err != nil {
+		log.Fatalf("failed to find title background: %v", err)
+	}
+
+	titleScene := scene.NewTitle(titleBackground)
+
+	mapTiles, err := maps.LoadTileImages(fs)
+	if err != nil {
+		log.Fatalf("failed to load map tiles: %v", err)
+	}
 
 	g := &Game{
 		font:       truetype.NewFace(fontData, &truetype.Options{Size: 10}),
 		titleScene: titleScene,
-		gameScene:  &GameScene{},
+		fs:         fs,
 	}
 
-	g.activeScene = g.titleScene
+	gameScene := &scene.GameScene{
+		Level: maps.NewLevel(g.Dimensions(), mapTiles),
+	}
+
+	g.gameScene = gameScene
 
 	titleScene.Next(g.gameScreen)
+
+	g.activeScene = g.titleScene
 
 	return g
 }
@@ -52,6 +72,21 @@ func NewGame(fs embed.FS) *Game {
 func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyQ) {
 		os.Exit(0)
+	}
+
+	// TODO this can generate more maps than we want
+	// can we limit it?
+	if ebiten.IsKeyPressed(ebiten.KeyR) {
+		mapTiles, err := maps.LoadTileImages(g.fs)
+		if err != nil {
+			log.Fatalf("failed to load map tiles: %v", err)
+		}
+
+		gameScene := &scene.GameScene{
+			Level: maps.NewLevel(g.Dimensions(), mapTiles),
+		}
+
+		g.activeScene = gameScene
 	}
 
 	g.activeScene.Update()
@@ -63,8 +98,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.activeScene.Draw(screen)
 }
 
-func (g *Game) Layout(width, height int) (int, int) {
-	return width, height
+func (g *Game) Layout(_, _ int) (int, int) {
+	return 1080, 768
 }
 
 func (g *Game) titleScreen() {
@@ -74,4 +109,15 @@ func (g *Game) titleScreen() {
 
 func (g *Game) gameScreen() {
 	g.activeScene = g.gameScene
+}
+
+func (g *Game) Dimensions() maps.Dimensions {
+	w, h := g.Layout(0, 0)
+
+	return maps.Dimensions{
+		Width:      w / 16,
+		Height:     h / 16,
+		TileWidth:  16,
+		TileHeight: 16,
+	}
 }
