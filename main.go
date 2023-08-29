@@ -5,6 +5,8 @@ import (
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/bradbeam/yeet-i/game"
 )
 
 //go:embed assets
@@ -14,7 +16,7 @@ func main() {
 	ebiten.SetWindowSize(1080, 768)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
-	if err := ebiten.RunGame(NewGame(assetsFS)); err != nil {
+	if err := ebiten.RunGame(game.NewGame(assetsFS)); err != nil {
 		log.Fatal(err)
 	}
 }

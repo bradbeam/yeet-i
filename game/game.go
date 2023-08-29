@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"io"
@@ -8,6 +8,8 @@ import (
 
 	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/yohamta/donburi"
+	"github.com/yohamta/donburi/ecs"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gomono"
 
@@ -23,9 +25,12 @@ type Game struct {
 	gameScene  scene.Scene
 
 	fs fs.FS
+
+	ecs *ecs.ECS
 }
 
 func NewGame(fs fs.FS) *Game {
+	// TODO this needs a fair amount of cleanup
 	fontData, err := truetype.Parse(gomono.TTF)
 	if err != nil {
 		panic(err)
@@ -54,6 +59,7 @@ func NewGame(fs fs.FS) *Game {
 		font:       truetype.NewFace(fontData, &truetype.Options{Size: 10}),
 		titleScene: titleScene,
 		fs:         fs,
+		ecs:        ecs.NewECS(donburi.NewWorld()),
 	}
 
 	gameScene := &scene.GameScene{
@@ -65,6 +71,17 @@ func NewGame(fs fs.FS) *Game {
 	titleScene.Next(g.gameScreen)
 
 	g.activeScene = g.titleScene
+
+	// g.ecs.
+	// 	// AddSystem(system.NewSpawn().Update).
+	// 	// AddSystem(metrics.Update).
+	// 	// AddSystem(system.NewBounce(&g.bounds).Update).
+	// 	// AddSystem(system.Velocity.Update).
+	// 	// AddSystem(system.Gravity.Update).
+	// 	AddRenderer(layers.LayerWall, system.DrawWall).
+	// 	AddRenderer(layers.LayerFloor, system.DrawFloor)
+	// 	//AddRenderer(layers.LayerMetrics, metrics.Draw).
+	// 	//AddRenderer(layers.LayerBunnies, system.Render.Draw)
 
 	return g
 }
@@ -89,12 +106,15 @@ func (g *Game) Update() error {
 		g.activeScene = gameScene
 	}
 
+	g.ecs.Update()
+
 	g.activeScene.Update()
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	g.ecs.Draw(screen)
 	g.activeScene.Draw(screen)
 }
 
