@@ -2,9 +2,9 @@ package game
 
 import (
 	"github.com/yohamta/donburi"
-	"github.com/yohamta/donburi/ecs"
 
 	"github.com/bradbeam/yeet-i/components"
+	"github.com/bradbeam/yeet-i/layers"
 )
 
 func (g *Game) EnterWorld() {
@@ -12,7 +12,7 @@ func (g *Game) EnterWorld() {
 
 	playerEntity := g.ecs.World.Entry(
 		g.ecs.Create(
-			ecs.LayerDefault,
+			layers.RealWorld,
 			components.Player,
 			components.Renderable,
 			components.Movable,

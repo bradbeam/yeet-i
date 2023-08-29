@@ -7,13 +7,17 @@ import (
 	"log"
 	"os"
 
+	_ "image/png"
+
 	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/ecs"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gomono"
 
+	"github.com/bradbeam/yeet-i/layers"
 	"github.com/bradbeam/yeet-i/maps"
 	"github.com/bradbeam/yeet-i/scene"
 	"github.com/bradbeam/yeet-i/system"
@@ -75,7 +79,9 @@ func NewGame(fs fs.FS) *Game {
 	g.activeScene = g.titleScene
 
 	g.ecs.
-		AddRenderer(ecs.LayerDefault, system.Render.Draw)
+		AddSystem(system.Movement.Update).
+		//AddRenderer(layers.Wall, system.Wall.Draw)
+		AddRenderer(layers.RealWorld, system.Render.Draw)
 
 	// g.ecs.
 	// 	// AddSystem(system.NewSpawn().Update).
@@ -92,13 +98,13 @@ func NewGame(fs fs.FS) *Game {
 }
 
 func (g *Game) Update() error {
-	if ebiten.IsKeyPressed(ebiten.KeyQ) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
 		os.Exit(0)
 	}
 
 	// TODO this can generate more maps than we want
 	// can we limit it?
-	if ebiten.IsKeyPressed(ebiten.KeyR) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
 		mapTiles, err := maps.LoadTileImages(g.fs)
 		if err != nil {
 			log.Fatalf("failed to load map tiles: %v", err)
@@ -120,8 +126,10 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.activeScene.Draw(screen)
-	// g.ecs.Draw(screen)
-	g.ecs.DrawLayer(ecs.LayerDefault, screen)
+
+	for _, layer := range []ecs.LayerID{layers.Default, layers.Floor, layers.Wall, layers.RealWorld} {
+		g.ecs.DrawLayer(layer, screen)
+	}
 }
 
 func (g *Game) Layout(_, _ int) (int, int) {

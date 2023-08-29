@@ -7,6 +7,7 @@ import (
 	"github.com/yohamta/donburi/filter"
 
 	"github.com/bradbeam/yeet-i/components"
+	"github.com/bradbeam/yeet-i/layers"
 )
 
 type render struct {
@@ -15,7 +16,7 @@ type render struct {
 
 var Render = &render{
 	query: ecs.NewQuery(
-		ecs.LayerDefault,
+		layers.RealWorld,
 		filter.Contains(
 			components.Position,
 			components.Renderable,
