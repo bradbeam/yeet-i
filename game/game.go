@@ -1,6 +1,7 @@
 package game
 
 import (
+	"image"
 	"io"
 	"io/fs"
 	"log"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/bradbeam/yeet-i/maps"
 	"github.com/bradbeam/yeet-i/scene"
+	"github.com/bradbeam/yeet-i/system"
 )
 
 type Game struct {
@@ -72,6 +74,9 @@ func NewGame(fs fs.FS) *Game {
 
 	g.activeScene = g.titleScene
 
+	g.ecs.
+		AddRenderer(ecs.LayerDefault, system.Render.Draw)
+
 	// g.ecs.
 	// 	// AddSystem(system.NewSpawn().Update).
 	// 	// AddSystem(metrics.Update).
@@ -106,16 +111,17 @@ func (g *Game) Update() error {
 		g.activeScene = gameScene
 	}
 
-	g.ecs.Update()
-
 	g.activeScene.Update()
+
+	g.ecs.Update()
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.ecs.Draw(screen)
 	g.activeScene.Draw(screen)
+	// g.ecs.Draw(screen)
+	g.ecs.DrawLayer(ecs.LayerDefault, screen)
 }
 
 func (g *Game) Layout(_, _ int) (int, int) {
@@ -128,6 +134,7 @@ func (g *Game) titleScreen() {
 }
 
 func (g *Game) gameScreen() {
+	g.EnterWorld()
 	g.activeScene = g.gameScene
 }
 
@@ -140,4 +147,20 @@ func (g *Game) Dimensions() maps.Dimensions {
 		TileWidth:  16,
 		TileHeight: 16,
 	}
+}
+
+func (g *Game) loadAssetFromFS(path string) *ebiten.Image {
+	f, err := g.fs.Open(path)
+	if err != nil {
+		log.Fatalf("failed to find asset: %v", err)
+	}
+
+	defer f.Close()
+
+	img, _, err := image.Decode(f)
+	if err != nil {
+		log.Fatalf("failed to load asset: %v", err)
+	}
+
+	return ebiten.NewImageFromImage(img)
 }
