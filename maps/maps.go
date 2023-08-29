@@ -39,7 +39,7 @@ func NewLevel(dimensions Dimensions, mapTiles map[TileType]Tile) *Level {
 func (l *Level) Draw(screen *ebiten.Image) {
 	for x := 0; x < l.Width; x++ {
 		for y := 0; y < l.Height; y++ {
-			tile := l.Tiles[l.getIndexFromXY(x, y)]
+			tile := l.Tiles[l.GetIndexFromXY(x, y)]
 			op := &ebiten.DrawImageOptions{}
 
 			op.GeoM.Translate(float64(tile.X), float64(tile.Y))
@@ -117,7 +117,7 @@ func (l *Level) invalidRoom(room Rect) bool {
 func (l *Level) createRoom(room Rect, groundTile Tile) {
 	for y := room.Y1 + 1; y < room.Y2; y++ {
 		for x := room.X1 + 1; x < room.X2; x++ {
-			index := l.getIndexFromXY(x, y)
+			index := l.GetIndexFromXY(x, y)
 			// l.Tiles[index].Blocked = false
 			l.Tiles[index].Tile = groundTile
 		}
@@ -140,7 +140,7 @@ func (l *Level) createHorizontalTunnel(x1 int, x2 int, y int, groundTile Tile) {
 	}
 
 	for x := minX; x <= maxX; x++ {
-		index := l.getIndexFromXY(x, y)
+		index := l.GetIndexFromXY(x, y)
 		// TODO s/Height/levelHeight/
 		// if index > 0 && index < gd.ScreenWidth*levelHeight {
 		if index > 0 && index < l.Width*l.Height {
@@ -161,7 +161,7 @@ func (l *Level) createVerticalTunnel(y1 int, y2 int, x int, groundTile Tile) {
 	}
 
 	for y := minY; y <= maxY; y++ {
-		index := l.getIndexFromXY(x, y)
+		index := l.GetIndexFromXY(x, y)
 		// TODO s/Height/levelHeight/
 		// if index > 0 && index < gd.ScreenWidth*levelHeight {
 		if index > 0 && index < l.Width*l.Height {
@@ -189,6 +189,6 @@ func initializeMap(dimensions Dimensions, mapTiles map[TileType]Tile) []*MapTile
 	return tiles
 }
 
-func (l *Level) getIndexFromXY(x int, y int) int {
+func (l *Level) GetIndexFromXY(x int, y int) int {
 	return (y * l.Dimensions.Width) + x
 }

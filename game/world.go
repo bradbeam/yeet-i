@@ -2,13 +2,29 @@ package game
 
 import (
 	"github.com/yohamta/donburi"
+	"github.com/yohamta/donburi/ecs"
+	"github.com/yohamta/donburi/filter"
 
 	"github.com/bradbeam/yeet-i/components"
 	"github.com/bradbeam/yeet-i/layers"
 )
 
 func (g *Game) EnterWorld() {
+	levelQuery := ecs.NewQuery(
+		layers.Floor,
+		filter.Contains(
+			components.Level,
+		),
+	)
+
 	x, y := 0, 0
+	levelEntity, ok := levelQuery.First(g.ecs.World)
+	if ok {
+		level := components.Level.Get(levelEntity)
+
+		// Do we need to nil check here?
+		x, y = level.Rooms[0].Center()
+	}
 
 	playerEntity := g.ecs.World.Entry(
 		g.ecs.Create(

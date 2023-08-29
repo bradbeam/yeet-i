@@ -11,7 +11,8 @@ import (
 )
 
 type render struct {
-	query *donburi.Query
+	query      *donburi.Query
+	levelQuery *donburi.Query
 }
 
 var Render = &render{
@@ -20,17 +21,33 @@ var Render = &render{
 		filter.Contains(
 			components.Position,
 			components.Renderable,
-		)),
+		),
+	),
+	levelQuery: ecs.NewQuery(
+		layers.Floor,
+		filter.Contains(
+			components.Level,
+		),
+	),
 }
 
 func (r *render) Draw(ecs *ecs.ECS, screen *ebiten.Image) {
+	level, ok := r.levelQuery.First(ecs.World)
+	if !ok {
+		return
+	}
+
+	l := components.Level.Get(level)
+
 	r.query.Each(ecs.World, func(entry *donburi.Entry) {
 		position := components.Position.Get(entry)
 		sprite := components.Renderable.Get(entry)
 
+		idx := l.GetIndexFromXY(position.X, position.Y)
+		tile := l.Tiles[idx]
+
 		op := &ebiten.DrawImageOptions{}
-		sw, sh := float64(screen.Bounds().Dx()), float64(screen.Bounds().Dy())
-		op.GeoM.Translate(float64(position.X)*sw, float64(position.Y)*sh)
+		op.GeoM.Translate(float64(tile.X), float64(tile.Y))
 		screen.DrawImage(sprite.Image, op)
 	})
 }

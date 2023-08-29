@@ -14,9 +14,11 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/ecs"
+	"github.com/yohamta/donburi/filter"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gomono"
 
+	"github.com/bradbeam/yeet-i/components"
 	"github.com/bradbeam/yeet-i/layers"
 	"github.com/bradbeam/yeet-i/maps"
 	"github.com/bradbeam/yeet-i/scene"
@@ -68,8 +70,26 @@ func NewGame(fs fs.FS) *Game {
 		ecs:        ecs.NewECS(donburi.NewWorld()),
 	}
 
+	level := maps.NewLevel(g.Dimensions(), mapTiles)
+
+	levelEntity := g.ecs.World.Entry(
+		g.ecs.Create(
+			layers.Floor,
+			components.Level,
+			components.Renderable,
+		),
+	)
+
+	donburi.SetValue(
+		levelEntity,
+		components.Level,
+		components.LevelComponent{
+			Level: level,
+		},
+	)
+
 	gameScene := &scene.GameScene{
-		Level: maps.NewLevel(g.Dimensions(), mapTiles),
+		ECS: g.ecs,
 	}
 
 	g.gameScene = gameScene
@@ -81,6 +101,7 @@ func NewGame(fs fs.FS) *Game {
 	g.ecs.
 		AddSystem(system.Movement.Update).
 		//AddRenderer(layers.Wall, system.Wall.Draw)
+		AddRenderer(layers.Floor, system.LevelRender.Draw).
 		AddRenderer(layers.RealWorld, system.Render.Draw)
 
 	// g.ecs.
@@ -110,11 +131,25 @@ func (g *Game) Update() error {
 			log.Fatalf("failed to load map tiles: %v", err)
 		}
 
-		gameScene := &scene.GameScene{
-			Level: maps.NewLevel(g.Dimensions(), mapTiles),
+		levelQuery := ecs.NewQuery(
+			layers.Floor,
+			filter.Contains(
+				components.Level,
+			),
+		)
+
+		levelEntity, ok := levelQuery.First(g.ecs.World)
+		if !ok {
+			return nil
 		}
 
-		g.activeScene = gameScene
+		donburi.SetValue(
+			levelEntity,
+			components.Level,
+			components.LevelComponent{
+				Level: maps.NewLevel(g.Dimensions(), mapTiles),
+			},
+		)
 	}
 
 	g.activeScene.Update()
@@ -126,10 +161,6 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.activeScene.Draw(screen)
-
-	for _, layer := range []ecs.LayerID{layers.Default, layers.Floor, layers.Wall, layers.RealWorld} {
-		g.ecs.DrawLayer(layer, screen)
-	}
 }
 
 func (g *Game) Layout(_, _ int) (int, int) {

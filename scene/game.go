@@ -2,16 +2,22 @@ package scene
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/yohamta/donburi/ecs"
 
-	"github.com/bradbeam/yeet-i/maps"
+	"github.com/bradbeam/yeet-i/layers"
 )
 
 type GameScene struct {
-	Level *maps.Level
+	ECS *ecs.ECS
 }
 
 func (g *GameScene) Update() {}
 
 func (g *GameScene) Draw(screen *ebiten.Image) {
-	g.Level.Draw(screen)
+	screen.Clear()
+
+	//for _, layer := range []ecs.LayerID{layers.Default, layers.Floor, layers.Wall, layers.RealWorld} {
+	for _, layer := range []ecs.LayerID{layers.Floor, layers.RealWorld} {
+		g.ECS.DrawLayer(layer, screen)
+	}
 }
