@@ -1,7 +1,10 @@
 package system
 
 import (
+	"fmt"
+
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/ecs"
 	"github.com/yohamta/donburi/filter"
@@ -14,6 +17,10 @@ import (
 type movement struct {
 	query      *donburi.Query
 	levelQuery *donburi.Query
+	// TPS is 60 by default, so we just need something to go
+	// at least that high
+	ticks uint8
+	rate  uint8
 }
 
 var Movement = &movement{
@@ -28,22 +35,50 @@ var Movement = &movement{
 			components.Level,
 		),
 	),
+
+	rate: 30,
 }
 
 func (m *movement) Update(ecs *ecs.ECS) {
+	m.ticks++
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyE) {
+		if m.rate < 255 {
+			m.rate++
+		}
+
+		fmt.Println(m.rate)
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
+		if m.rate > 0 {
+			m.rate--
+		}
+
+		fmt.Println(m.rate)
+	}
+
+	if m.ticks%m.rate != 0 {
+		return
+	}
+
+	// Reset counter so we can do arbitrary mod's above
+	// and not worry about periodically skipping a move
+	m.ticks = 0
+
 	x := 0
 	y := 0
 
-	if ebiten.IsKeyPressed(ebiten.KeyUp) {
+	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW) {
 		y = -1
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyDown) {
+	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
 		y = 1
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
 		x = -1
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyRight) {
+	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
 		x = 1
 	}
 
