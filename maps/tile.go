@@ -30,7 +30,20 @@ func TileTypeToAsset(tileType TileType) string {
 
 type Tile struct {
 	TileType TileType
+	State    TileState
 	Image    *ebiten.Image
+}
+
+type TileState int
+
+const (
+	TileStateUnknown TileState = iota
+	TileStateFree
+	TileStateOccupied
+)
+
+func (t *Tile) Blocked() bool {
+	return t.State != TileStateFree
 }
 
 // Do we want to do anything here?
@@ -64,11 +77,19 @@ func LoadTileImages(fs fs.FS) (map[TileType]Tile, error) {
 
 		_ = assetFile.Close()
 
+		var state TileState
+		switch tileType {
+		case GroundTileType:
+			state = TileStateFree
+		case WallTileType:
+			state = TileStateOccupied
+		}
+
 		tileImages[tileType] = Tile{
 			TileType: tileType,
 			Image:    ebiten.NewImageFromImage(asset),
+			State:    state,
 		}
-
 	}
 
 	return tileImages, nil
