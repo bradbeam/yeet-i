@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/ecs"
 	"github.com/yohamta/donburi/filter"
@@ -27,16 +26,17 @@ var Movement = &movement{
 func (m *movement) Update(ecs *ecs.ECS) {
 	x := 0
 	y := 0
-	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
+
+	if ebiten.IsKeyPressed(ebiten.KeyUp) {
 		y = -1
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
+	if ebiten.IsKeyPressed(ebiten.KeyDown) {
 		y = 1
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
 		x = -1
 	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyRight) {
+	if ebiten.IsKeyPressed(ebiten.KeyRight) {
 		x = 1
 	}
 

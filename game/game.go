@@ -126,11 +126,15 @@ func (g *Game) Update() error {
 	// TODO this can generate more maps than we want
 	// can we limit it?
 	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		// Load up a new map
 		mapTiles, err := maps.LoadTileImages(g.fs)
 		if err != nil {
 			log.Fatalf("failed to load map tiles: %v", err)
 		}
 
+		level := maps.NewLevel(g.Dimensions(), mapTiles)
+
+		// Update entity with new map data
 		levelQuery := ecs.NewQuery(
 			layers.Floor,
 			filter.Contains(
@@ -147,7 +151,31 @@ func (g *Game) Update() error {
 			levelEntity,
 			components.Level,
 			components.LevelComponent{
-				Level: maps.NewLevel(g.Dimensions(), mapTiles),
+				Level: level,
+			},
+		)
+
+		// Update player location to spawn in a new room
+		x, y := level.Rooms[0].Center()
+
+		playerQuery := ecs.NewQuery(
+			layers.RealWorld,
+			filter.Contains(
+				components.Player,
+			),
+		)
+
+		playerEntity, ok := playerQuery.First(g.ecs.World)
+		if !ok {
+			return nil
+		}
+
+		donburi.SetValue(
+			playerEntity,
+			components.Position,
+			components.PositionComponent{
+				X: x,
+				Y: y,
 			},
 		)
 	}
